@@ -1,62 +1,37 @@
 const passport = require("passport");
-const local = require("passport-local");
+const githubStrategy = require("passport-github2");
 const { createHash, isValidPassword } = require("../utils");
 const userModel = require("../models/user");
 
-const LocalStrategy = local.Strategy;
+const LocalStrategy = githubStrategy.Strategy;
 
 const initializePassport = () => {
   passport.use(
-    "register",
-    new LocalStrategy(
+    "github",
+    new githubStrategy(
       {
-        passReqToCallback: true,
-        usernameField: "email",
+        clientID: "Iv1.6f21e9f4a7958fd1",
+        callbackURL: "http://localhost:8080/api/sessions/githubcallback",
+        clientSecret: "880022b93683fe56bb7f6f0f7ed8e85657adc2e1",
       },
-      async (req, username, password, done) => {
-        const { first_name, last_name, email, age } = req.body;
-
-        const user = await userModel.findOne({ email: username });
-
+      async (_accesToken, _refreshToken, profile, done) => {
         try {
-          if (user) {
-            return done(null, false);
-          }
+          const user = await userModel.findOne({ email: profile._json.email });
 
-          const newUser = {
-            first_name,
-            last_name,
-            email,
-            age,
-            password: createHash(password),
-          };
-          const result = await userModel.create(newUser);
-          return done(null, result);
-        } catch (error) {
-          return done(error);
-        }
-      }
-    )
-  );
-
-  passport.use(
-    "login",
-    new LocalStrategy(
-      {
-        usernameField: "email",
-      },
-      async (username, password, done) => {
-        try {
-          const user = await userModel.findOne({ email: username });
           if (!user) {
-            return done(null, false);
-          }
+            let newUser = {
+              first_name: profile._json.name,
+              last_name: "López",
+              age: 35,
+              email: profile._json.email,
+            };
 
-          if (!isValidPassword(user, password)) {
-            return done(null, false);
-          }
+            let result = await userModel.create(newUser);
 
-          return done(null, user);
+            return done(null, result);
+          } else {
+            return done(null, user);
+          }
         } catch (error) {
           return done(error);
         }

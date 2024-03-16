@@ -6,84 +6,25 @@ const passport = require("passport");
 
 const sessionRouter = Router();
 
-sessionRouter.post(
-  "/register",
-  passport.authenticate("register", {
-    failureRedirect: "/api/sessions/registerFail",
-  }),
-  async (req, res) => {
-    /*const { first_name, last_name, email, age, password } = req.body;
-
-  if (!first_name || !last_name || !email || !age || !password) {
-    return res.status(400).send({ status: "error", error: "missing data" });
-  }
-
-  const hashedPassword = createHash(password);
-
-  const result = await userModel.create({
-    first_name,
-    last_name,
-    email,
-    age,
-    password: hashedPassword,
-  });
-  */
-    res.send({
-      status: "success",
-      message: "user registered",
-      //details: result,
-    });
-  }
+sessionRouter.get(
+  "/github",
+  passport.authenticate("github", { scope: ["user: email"] }),
+  async (req, res) => {}
 );
 
-sessionRouter.get("/registerFail", (req, res) => {
-  res.status(401).send({ status: "error", error: "authentication error" });
-});
-
-sessionRouter.post(
-  "/login",
-  passport.authenticate("login", { failureRedirect: "api/sessions/loginFail" }),
+sessionRouter.get(
+  "/githubcallback",
+  passport.authenticate("github", { failureRedirect: "/login" }),
   async (req, res) => {
-    /*const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).send({ status: "error", error: "missing data" });
-  }
-
-  const user = await userModel.findOne({ email: email });
-  if (!user) {
-    return res
-      .status(401)
-      .send({ status: "error", error: "incorrect credentials" });
-  }
-
-  if (!isValidPassword(user, password)) {
-    return res
-      .status(401)
-      .send({ status: "error", error: "incorrect password" });
-  }
-*/
-    const user = req.user;
-
-    /** Create session */
     req.session.user = {
-      name: `${user.first_name} ${user.last_name}`,
-      email: user.email,
-      age: user.age,
+      name: `${req.user.first_name} ${req.user.last_name}`,
+      age: req.user.age,
+      email: req.user.email,
     };
 
-    /** Service answer */
-    res.status(200).send({
-      status: "success",
-      payload: req.session.user,
-      message: "succesfully logged in",
-    });
+    res.redirect("/");
   }
 );
-
-sessionRouter.get("/loginFail", (req, res) => {
-  res.status(401).send({ status: "error", error: "login fail" });
-});
 
 sessionRouter.get("/logout", (req, res) => {
   req.session.destroy((err) => {
