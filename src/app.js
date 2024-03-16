@@ -6,6 +6,8 @@ const handlebars = require("express-handlebars");
 const sessionRouter = require("./routes/sessions.router");
 const viewsRouter = require("./routes/views.router");
 require("dotenv").config();
+const passport = require("passport");
+const initializePassport = require("./config/passport.config");
 
 const port = 8080;
 
@@ -37,6 +39,11 @@ app.use(
 app.use(express.static(`${__dirname}/public`));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+/** passport */
+initializePassport();
+app.use(passport.initialize());
+app.use(passport.session());
 
 /** Handlebars config */
 app.engine("handlebars", handlebars.engine());

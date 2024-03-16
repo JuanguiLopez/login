@@ -2,11 +2,17 @@ const { Router } = require("express");
 const userModel = require("../models/user");
 const session = require("express-session");
 const { createHash, isValidPassword } = require("../utils");
+const passport = require("passport");
 
 const sessionRouter = Router();
 
-sessionRouter.post("/register", async (req, res) => {
-  const { first_name, last_name, email, age, password } = req.body;
+sessionRouter.post(
+  "/register",
+  passport.authenticate("register", {
+    failureRedirect: "/api/sessions/registerFail",
+  }),
+  async (req, res) => {
+    /*const { first_name, last_name, email, age, password } = req.body;
 
   if (!first_name || !last_name || !email || !age || !password) {
     return res.status(400).send({ status: "error", error: "missing data" });
@@ -21,12 +27,24 @@ sessionRouter.post("/register", async (req, res) => {
     age,
     password: hashedPassword,
   });
+  */
+    res.send({
+      status: "success",
+      message: "user registered",
+      //details: result,
+    });
+  }
+);
 
-  res.send({ status: "success", message: "user registered", details: result });
+sessionRouter.get("/registerFail", (req, res) => {
+  res.status(401).send({ status: "error", error: "authentication error" });
 });
 
-sessionRouter.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+sessionRouter.post(
+  "/login",
+  passport.authenticate("login", { failureRedirect: "api/sessions/loginFail" }),
+  async (req, res) => {
+    /*const { email, password } = req.body;
 
   if (!email || !password) {
     return res.status(400).send({ status: "error", error: "missing data" });
@@ -44,20 +62,27 @@ sessionRouter.post("/login", async (req, res) => {
       .status(401)
       .send({ status: "error", error: "incorrect password" });
   }
+*/
+    const user = req.user;
 
-  /** Create session */
-  req.session.user = {
-    name: `${user.first_name} ${user.last_name}`,
-    email: user.email,
-    age: user.age,
-  };
+    /** Create session */
+    req.session.user = {
+      name: `${user.first_name} ${user.last_name}`,
+      email: user.email,
+      age: user.age,
+    };
 
-  /** Service answer */
-  res.status(200).send({
-    status: "success",
-    payload: req.session.user,
-    message: "succesfully logged in",
-  });
+    /** Service answer */
+    res.status(200).send({
+      status: "success",
+      payload: req.session.user,
+      message: "succesfully logged in",
+    });
+  }
+);
+
+sessionRouter.get("/loginFail", (req, res) => {
+  res.status(401).send({ status: "error", error: "login fail" });
 });
 
 sessionRouter.get("/logout", (req, res) => {
